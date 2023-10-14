@@ -1,0 +1,151 @@
+\documentclass[nofonts]{ctexart} 
+
+\usepackage{xltxtra} 
+\usepackage{graphicx} 
+\usepackage{amsmath} 
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{tikz}
+\usepackage{fontspec}
+\usepackage{natbib}
+
+\pagestyle{plain}
+
+\setCJKmainfont[
+BoldFont={WenQuanYi Zen Hei:style=Regular},
+ItalicFont={AR PL KaitiM GB:style=Regular}]
+{AR PL UMing CN:style=Light}
+\setCJKsansfont{WenQuanYi Zen Hei Sharp:style=Regular}
+\setCJKmonofont{WenQuanYi Zen Hei Mono:style=Regular}
+
+
+\title{Homework2: 论文排版}
+
+
+\author{王淳 \\ 计算机科学与技术 3220105023}
+
+\begin{document}
+
+\maketitle
+
+\section{ 不可压缩的 Navier——Stokes方程}
+不可压缩流体的二维流场完全由速度矢量 $q=\left( {u\left( {x,y} \right),v\left( {x,y} \right)} \right) \in R^{2} $和压力 $p(x,y) \in \ R$.这些函数是下列守恒定律的解\cite{Book}（例如，参见Hirsch,1988）:\\
+\\·质量守恒：
+\begin{equation}\label{eq:1}
+     div(q) = 0,
+\end{equation}
+\\或者，用发散算子的显示形式来写，
+\begin{equation}\label{eq:2}
+    \frac{\partial u}{\partial x}+\frac{\partial v}{\partial y}=0 .
+\end{equation}
+\\·紧化形式下的动量守恒方程:
+\begin{equation}\label{eq:3}
+    \frac{\partial q}{\partial t}+\operatorname{div}(q \otimes q)=-\mathcal{G} p+\frac{1}{R e} \Delta q,
+\end{equation}
+\\或者，在显式形式下,
+\begin{equation}\label{eq:4}
+    \left\{\begin{array}{l}
+\frac{\partial u}{\partial t}+\frac{\partial u^{2}}{\partial x}+\frac{\partial u v}{\partial y}=-\frac{\partial p}{\partial x}+\frac{1}{R e}\left(\frac{\partial^{2} u}{\partial x^{2}}+\frac{\partial^{2} u}{\partial y^{2}}\right) \\
+\frac{\partial v}{\partial t}+\frac{\partial u v}{\partial x}+\frac{\partial v^{2}}{\partial y}=-\frac{\partial p}{\partial y}+\frac{1}{R e}\left(\frac{\partial^{2} v}{\partial x^{2}}+\frac{\partial^{2} v}{\partial y^{2}}\right)
+\end{array}\right.
+\end{equation}
+\\前面的方程式使用以下比例变量以无量纲形式编写：
+\begin{equation}\label{eq:5}
+    x=\frac{x^{*}}{L}, \quad y=\frac{y^{*}}{L}, \quad u=\frac{u^{*}}{V_{0}}, \quad v=\frac{v^{*}}{V_{0}}, \quad t=\frac{t^{*}}{L / V_{0}}, \quad p=\frac{p^{*}}{\rho_{0} V_{0}^{2}}
+\end{equation}
+\\其中上标(*)表示以物理单位测量的变量。常数$L$、$V_{0}$分别是表征模拟流的参考长度和速度。无量纲数Re被称为Regnold数，并量化了流动中惯性(或对流)项和粘性(或扩散)项的相对重要性：
+\begin{equation}\label{eq:6}
+    R e=\frac{V_{0} L}{\nu}
+\end{equation}
+\\式中$\nu$为流动的运动粘度。
+\\总之，将在本项目中进行数值求解的PDE的Navier-Stokes系统由\ref{eq:2}和\ref{eq:4}定义；初始条件(t=0时)和边界条件将在以下章节中讨论。
+\section{计算域、交错网格和边界条件}
+通过考虑处处具有周期性边界条件的矩形区域$L_{x} \times L_{y}$(见图12.1)，数值求解Navier-Stokes方程大为简化。速度$q(x，y)$和压力$p(x，y)$场的周期性在数学上表示为:
+\begin{equation}\label{eq:7}
+    q(0, y)=q\left(L_{x}, y\right), \quad p(0, y)=p\left(L_{x}, y\right), \quad \forall y \in\left[0, L_{y}\right]
+\end{equation}
+\begin{equation}\label{eq:8}
+    q(x, 0)=q\left(x, L_{y}\right), \quad p(x, 0)=p\left(x, L_{y}\right), \quad \forall x \in\left[0, L_{x}\right]
+\end{equation}
+\\将计算解的点分布在遵循矩形和均匀2D网格的区域中。由于在我们的方法中并非所有变量都共享同一个网格，因此我们首先定义一个主网格(请参见12流体动力学：求解二维Navier-Stokes方程
+图12.1)通过分别取沿$x$的$n_{x}$个计算点和沿$y$的$n_{y}$个计算点生成：
+\begin{equation}\label{eq:9}
+    x_{c}(i)=(i-1) \delta x, \quad \delta x=\frac{L_{x}}{n_{x}-1}, \quad i=1, \ldots, n_{x}
+\end{equation}
+\begin{equation}\label{eq:10}
+    y_{c}(j)=(j-1) \delta y, \quad \delta y=\frac{L_{y}}{n_{y}-1}, \quad j=1, \ldots, n_{y}
+\end{equation}
+\begin{tikzpicture}
+    \draw[font=\bfseries][->] (0,0) -- (5,0) node[right] {$L_x$};%坐标
+    \draw[font=\bfseries][->] (0,0) -- (0,4) node[above] {$L_y$};
+    \draw [red](4,0) -- (4,4);
+    \draw [red](0,4) -- (4,4);
+    \draw [red](0,0) -- (0,4);
+    \draw [red](0,0) -- (4,0);
+    \draw [black] (-1,-1) -- (-1,5);
+    \draw [black] (-1,5) -- (6,5);
+    \draw [black] (6,5) -- (6,-1);
+    \draw [black] (6,-1) -- (-1,-1);
+    \draw[<->, line width=3pt] (0,2) -- (1,2);
+    \draw[<->, line width=3pt] (2,0) -- (2,1);
+    \draw[<->, line width=3pt] (2,3) -- (2,4);
+    \draw[<->, line width=3pt] (3.5,2) -- (4.5,2);
+    \node [font=\bfseries] at (-0.3,2) {Y};
+    \node [font=\bfseries] at (2,-0.3) {X};
+    \node [font=\bfseries] at (-0.3,0.2) {0};
+    \node [font=\bfseries] at (0.2,-0.3) {0};
+    \node [font=\bfseries] at (1,2.5) {periodicity};
+    \node [font=\bfseries] at (3.4,0.5) {periodicity};
+    \node [font=\bfseries] at (3.4,3.5) {periodicity};
+    \node [font=\bfseries] at (5.2,2.5) {periodicity};
+\end{tikzpicture}
+\begin{tikzpicture}
+    \draw[->] (0,0) -- (4,0) node[right] {$x$};
+    \draw[->] (0,0) -- (0,3) node[above] {$y$};
+    \draw [green] (1,0) -- (1,3);
+    \draw [green] (2,0) -- (2,3);
+    \draw [green] (3,0) -- (3,3);
+    \draw [green] (0,1) -- (3,1);
+    \draw [green] (0,2) -- (3,2);
+    \draw [green] (0,3) -- (3,3);
+    \draw [black] (-1,-1) -- (-1,5);%边框
+    \draw [black] (-1,5) -- (6,5);
+    \draw [black] (6,5) -- (6,-1);
+    \draw [black] (6,-1) -- (-1,-1);
+    \draw [dashed] (1.5,0) -- (1.5,3);
+    \draw [dashed] (0,1.5) -- (3,1.5);
+    \node at (0,0) [below] {0};
+    \node at (1,0)[below] {\rotatebox{90}{$x_{c}(i)$}};
+    \node at (2,0)[below] {\rotatebox{90}{$x_{c}(i+1)$}};
+    \node at (3.5,0) [above] {$L_{X}$};
+    \node at (0,1) [left] {$y_{c}(j)$};
+    \node at (0,2) [left] {$y_{c}(j+1)$};
+    \node at (0,3)[left] {\rotatebox{90}{$Y$}};
+    \node at (1.5,0)[below] {\rotatebox{90}{$x_{m}(i)$}};
+    \node at (0,1.5) [left] {$y_{m}(j)$};
+    \node [font=\bfseries] at (1,1.5) [left] {$u(i,j)$};
+    \node at (1.5,1.5) [right] {$p(i,j)$};
+    \node at (1.5,1) [below] {$v(i,j)$};
+\end{tikzpicture}
+\begin{center}
+Fig 12.1.计算域、交错网格和边界条件.
+\end{center}
+
+次轴网由主轴网单元的中心定义：
+\begin{equation}\label{eq:11}
+    x_{m}(i)=(i-1/2)\delta x, \quad
+    i=1,\ldots,n_{xm}
+\end{equation}
+\begin{equation}\label{eq:12}
+    y_{m}(j)=(j-1/2)\delta y, \quad
+    j=1,\ldots,n_{ym}
+\end{equation}
+\\其中我们使用了速记符号$n_{xm}$=$n_{x}-1$，$n_{ym}$=$n_{y}-1$。在定义为矩形$\left[x_{c}(i), x_{c}(i+1)\right]×\left[y_{c}(j), x_{c}(j+1)\right]$未知变量$u$，$v$，$p$将被计算为解在不同空间位置的近似值：
+\\$ u(i, j) \approx u(x_{c}(i), y_{m}(j))$ (网格西面),
+\\$ v(i, j) \approx v(x_{m}(i), y_{c}(j))$  (网格南面),
+\\$p(i, j) \approx p(x_{m}(i), y_{m}(j)) $ (网格中部).
+\\这种交错排列的变量有很强的耦合压力和速度之间的优点。它有帮助(参见本章末尾的参考文献)，以避免如并配安排的一些稳定性和收敛的问题(其中所有的变量计算
+在相同的网格点)。
+\bibliographystyle{plain}
+\bibliography{references.bib}
+\end{document}
